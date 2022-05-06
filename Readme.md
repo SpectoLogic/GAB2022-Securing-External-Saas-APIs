@@ -1,6 +1,6 @@
 # Securing external SaaS APIs with Azure API Management
 
-This repo contains all slides and configuration settings used in the demo of my talk at the Global Azure Boot Camp in Austria 2022.
+This repo contains all slides and configuration settings used in the demo of my talk at the [Global Azure Boot Camp in Austria 2022](https://globalazure.at/sessions/).
 
 Folders:
 - certs... This folder contains the configuration files for the Certificate Authority-Certificate and the Client Certficate. It also contains the script **create.sh** which will create the PFX/CER files required for the demo
