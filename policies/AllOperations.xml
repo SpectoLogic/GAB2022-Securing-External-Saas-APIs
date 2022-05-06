@@ -1,0 +1,31 @@
+<policies>
+    <inbound>
+        <base />
+        <choose>
+            <when condition="@(context.Request.Certificate == null 
+                || !context.Request.Certificate.VerifyNoRevocation()  
+                || context.Request.Certificate.IssuerName.Name!="E=demo@contoso.com, CN=Contoso Demo Certification Authority, OU=CA, O=Contoso Demo, L=City, S=LowerAustria, C=AT"
+                || context.Request.Certificate.Thumbprint != "06D8772C8620CEBFE7DFD23A46B57EC29644079D" 
+                || context.Request.Certificate.NotAfter<DateTime.Now)">
+                <return-response>
+                    <set-status code="403" reason="Access denied!" />
+                </return-response>
+            </when>
+        </choose>
+        <set-header name="Authorization" exists-action="override">
+            <value>Bearer {{Hubspot-AccessToken}}</value>
+        </set-header>
+        <set-header name="Content-Type" exists-action="override">
+            <value>application/json</value>
+        </set-header>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

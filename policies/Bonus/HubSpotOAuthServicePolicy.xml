@@ -1,0 +1,56 @@
+<policies>
+    <inbound>
+        <base />
+        <choose>
+			<!-- Verify the provided certificate against the uploaded certifiates in Azure API Management -->
+            <when condition="@(
+				  context.Request.Certificate == null || 
+				  !context.Request.Certificate.Verify() || 
+				  !context.Deployment.Certificates.Any(c => (c.Value.IssuerName.Name=="CN=api.contoso.com" 
+                                                          && c.Value.Thumbprint == context.Request.Certificate.Thumbprint)) || 
+				  context.Request.Certificate.NotAfter<DateTime.Now)">
+                <return-response>
+                    <set-status code="403" reason="Authorization denied!" />
+                </return-response>
+            </when>
+        </choose>
+		<!-- Request an OAuth Access Token from an Azure Function that autorenews with the RefreshToken -->
+        <send-request mode="new" timeout="20" ignore-error="false" response-variable-name="hubSpotToken">
+            <!-- https://registrationService.azurewebsites.net/api/HubspotToken/{hubspotappID}/{targetTenantID} -->
+            <set-url>https://registrationService.azurewebsites.net/api/HubspotToken/345768/8792134</set-url>
+            <set-method>GET</set-method>
+            <!-- abc0 ... ist die Client-ID von der AAD-App: registrationservice-auth -->
+            <authentication-managed-identity resource="abc0c5a5-23a2-1c4a-b421-5c0f4205d2a4" />
+        </send-request>
+		<!-- Extract the Access Token -->
+        <set-variable name="ResponseBody" value="@(((IResponse)context.Variables["hubSpotToken"]).Body.As<JObject>())" />
+        <set-variable name="AccessToken" value="@((string)((JObject)context.Variables["ResponseBody"])["accessToken"])" />
+        <choose>
+            <!-- Check active property in response -->
+            <when condition="@( (context.Variables["ResponseBody"]==null) || (string.IsNullOrEmpty((string)context.Variables["AccessToken"])) )">
+                <!-- Return 401 Unauthorized with http-problem payload -->
+                <return-response response-variable-name="existing response variable">
+                    <set-status code="401" />
+                    <set-header name="WWW-Authenticate" exists-action="override">
+                        <value>Bearer error="invalid_token"</value>
+                    </set-header>
+                </return-response>
+            </when>
+            <otherwise>
+				<!-- If valid set the bearer token for the HubSpot Application -->
+                <set-header name="Authorization" exists-action="override">
+                    <value>@("Bearer " + (string)context.Variables["AccessToken"])</value>
+                </set-header>
+            </otherwise>
+        </choose>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

@@ -1,0 +1,21 @@
+<policies>
+	<inbound>
+		<base />
+		<set-body template="liquid">
+			{
+			"properties":{
+			"certification_id" : "{{body.properties.certification_id}}"
+			}
+			}
+		</set-body>
+	</inbound>
+	<backend>
+		<base />
+	</backend>
+	<outbound>
+		<base />
+	</outbound>
+	<on-error>
+		<base />
+	</on-error>
+</policies>

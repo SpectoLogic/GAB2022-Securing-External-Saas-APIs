@@ -1,0 +1,37 @@
+<policies>
+    <inbound>
+        <set-variable name="reqProperties" value="@{
+        try
+        {
+            var allowedProperties = new List<string>(){"firstname","lastname","email","certification_id"};
+            string props = context.Request.OriginalUrl.Query.GetValueOrDefault("properties");
+            var values = props.Split(',').ToList();
+            foreach(var value in props.Split(','))
+            {
+                if (!allowedProperties.Contains(value.ToLower()))
+                {
+                    values.Remove(value);
+                }
+            }
+            return string.Join(",",values);
+        }
+        catch(Exception ex)
+        {
+           return $"email,certification_id";
+        }
+        }" />
+        <rewrite-uri template="@{
+        return "/crm/v3/objects/contacts/51?properties=" + context.Variables.GetValueOrDefault<string>("reqProperties");
+        }" />
+        <base />
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>

@@ -1,0 +1,41 @@
+<policies>
+    <inbound>
+        <base />
+        <rewrite-uri template="/crm/v3/objects/contacts/search" />
+        <set-method>POST</set-method>
+        <set-body template="liquid">{
+                "properties":["email, certification_id"],
+                "filterGroups":[
+                    {
+                        "filters": [
+                            {
+                            "value": "{{context.Request.MatchedParameters["email"]}}",
+                            "propertyName": "email",
+                            "operator": "EQ"
+                            }
+                        ]
+                    }
+                ]
+            }</set-body>
+        <set-header name="Accept-Encoding" exists-action="override">
+            <value>gzip, deflate</value>
+        </set-header>
+    </inbound>
+    <backend>
+        <base />
+    </backend>
+    <outbound>
+        <set-header name="Content-Type" exists-action="override">
+            <value>application/json</value>
+        </set-header>
+        <set-header name="Content-Encoding" exists-action="delete" />
+        <set-body template="liquid">
+            {"total":{{body.total}} {% if (body.total == "1") %},"id":"{{body.results[0].id}}","email":"{{body.results[0].properties.email}}"
+             ,"certification_id":"{{body.results[0].properties.certification_id}}"{% endif %} }
+	</set-body>
+        <base />
+    </outbound>
+    <on-error>
+        <base />
+    </on-error>
+</policies>
